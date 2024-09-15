@@ -24,6 +24,9 @@ import jax.numpy as jnp
 K_MASK = -2.3819763e38  # Set to a large negative number.
 LayerCache = dict[str, jax.Array]
 
+def custom_matmul(a, b):
+    # Your custom matrix multiplication logic
+    return a @ b
 
 class AttentionType(enum.Enum):
   GLOBAL = 1

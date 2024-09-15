@@ -17,7 +17,32 @@
 from flax import linen as nn
 import jax
 import jax.numpy as jnp
+import numpy as np
 
+
+def my_matmul(A, B):
+    return A @ B
+
+def simple_einsum(eqn, *operands):
+    input_eqn, output_eqn = eqn.split('->')
+    input_labels = input_eqn.split(',')
+    
+    # Reshape operands based on input labels
+    operands = list(operands)  # Convert operands to a list
+    for i, (operand, labels) in enumerate(zip(operands, input_labels)):
+        axis_order = [labels.find(lbl) for lbl in set(labels)]
+        operands[i] = np.transpose(operand, axes=axis_order)
+
+    # Perform element-wise multiplication and sum over the specified axes
+    result = operands[0]
+    for operand in operands[1:]:
+        result = my_matmul(result, operand)
+    
+    # Final reshape based on output labels
+    output_shape = [result.shape[input_labels[0].find(lbl)] for lbl in output_eqn]
+    result = result.reshape(output_shape)
+
+    return result
 
 class Einsum(nn.Module):
   """Einsum is a convenience module for parameterized tensor multiplication."""
@@ -26,7 +51,8 @@ class Einsum(nn.Module):
   @nn.compact
   def __call__(self, eqn: str, x: jax.Array) -> jax.Array:
     w = self.param('w', nn.initializers.normal(), self.shape)
-    return jnp.einsum(eqn, x, w)
+    #return jnp.einsum(eqn, x, w)
+    #return simple_einsum(eqn, x, w)
 
 
 class RMSNorm(nn.Module):
